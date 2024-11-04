@@ -1,11 +1,55 @@
 ﻿using BT4.Models;
 using Microsoft.AspNetCore.Mvc;
+using BT4.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace BT4.Controllers
 {
     public class AccessController : Controller
-    {
+    { 
         QlbanVaLiContext db = new QlbanVaLiContext();
+
+        [Route("Signup")]
+        [HttpGet]
+        public IActionResult Signup()
+        {
+           
+            var model = new RegisterViewModel
+            {
+                KhachHang = new TKhachHang(), 
+                User = new TUser() 
+            };
+            return View(model); 
+        }
+
+        [Route("Signup")]
+        [HttpPost]
+        public IActionResult Signup(RegisterViewModel model)
+        {
+            var existingUser = db.TUsers.SingleOrDefault(u => u.Username == model.User.Username);
+
+            if (existingUser != null)
+            {
+                model.UsernameError = "Tên người dùng đã tồn tại. Vui lòng chọn tên khác.";
+                ModelState.AddModelError("User.Username", model.UsernameError);
+                return View(model);
+            }
+            model.User.LoaiUser = 0;
+            db.TUsers.Add(model.User);
+            model.KhachHang.MaKhanhHang = model.User.Username;
+            model.KhachHang.Username = model.User.Username;
+            db.TKhachHangs.Add(model.KhachHang);
+            db.SaveChanges();
+            return RedirectToAction("Login");
+
+        }
+
+
+
+
+
+
+        [Route("Login")]
         [HttpGet]
         public IActionResult Login()
         {
@@ -18,6 +62,8 @@ namespace BT4.Controllers
                 return RedirectToAction("Index","Home");
             }
         }
+
+        [Route("Login")]
         [HttpPost]
         public IActionResult Login(TUser user)
         {
@@ -38,6 +84,8 @@ namespace BT4.Controllers
             }
             return View();
         }
+
+        [Route("Logout")]
 
         public IActionResult Logout()
         {
